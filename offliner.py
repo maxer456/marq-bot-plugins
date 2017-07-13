@@ -11,3 +11,11 @@ class Offliner(Plugin):
     @Plugin.command('ping')
     def command_ping(self, event):
         event.msg.reply('Pong!')
+
+    @Plugin.listen('PresenceUpdate')
+    def member_presence_update(self, event):
+        state = self.state
+        user = state.users[event.user.id]
+        channels = state.guilds[event.guild_id].channels.values()
+        channel = next(iter(channels))
+        channel.send_message('{} just went {}!'.format(user.username, event.status))
