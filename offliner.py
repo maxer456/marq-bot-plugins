@@ -1,6 +1,7 @@
 #/usr/bin/env pyton3
 
 from disco.bot import Plugin
+from disco.types.user import Status
 from time import time
 
 class Offliner(Plugin):
@@ -11,7 +12,8 @@ class Offliner(Plugin):
 
     def load(self, ctx):
         super().load(ctx)
-        self.offline_times = self.storage.guild('offline_times')
+        self.stats = self.storage.guild('offliner_stats')
+        self.current = {}
 
     @Plugin.command('ping')
     def command_ping(self, event):
@@ -19,11 +21,6 @@ class Offliner(Plugin):
 
     @Plugin.listen('PresenceUpdate')
     def member_presence_update(self, event):
-        state = self.state
-        user = state.users[event.user.id]
-        channels = state.guilds[event.guild_id].channels.values()
-        channel = next(iter(channels))
-        channel.send_message('{} just went {}!'.format(user.username, event.status))
-
-        if state == 'offline':
-            self.offline_times[event.user.id] = time()
+        if event.status == Status.OFFLINE:
+            self.stats[event.user.id] = time()
+            
