@@ -25,10 +25,6 @@ class Offliner(Plugin):
         for counter in self.counters.values():
             counter.kill()
 
-    @Plugin.command('ping')
-    def command_ping(self, event):
-        event.msg.reply('Pong!')
-
     @Plugin.listen('PresenceUpdate')
     def member_presence_update(self, event):
         userid = str(event.user.id)
