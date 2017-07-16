@@ -38,9 +38,8 @@ class Offliner(Plugin):
                 while True:
                     sleep(self.DAY)
                     self.current[userid] += 1
-                    # TODO: language?
                     points = '~~||||~~ ' * (self.current[userid] // 5) + '|' * (self.current[userid] % 5)
-                    channel.send_message('{} má další čárku: {}'.format(event.user.mention, points))
+                    channel.send_message('{}: {}'.format(event.user.mention, points))
 
             self.counters[userid] = self.spawn(counter)
         elif userid in self.counters:
