@@ -31,10 +31,15 @@ class Offliner(Plugin):
 
         if event.status == Status.OFFLINE:
             self.current[userid] = 0
+            guild = self.ctx['guild']
+            channel = next(iter(guild.channels.values()))
+            
             def counter():
                 while True:
-                    sleep(DAY)
+                    sleep(self.DAY)
                     self.current[userid] += 1
+                    # TODO: language?
+                    channel.send_message('{} má další čárku: {}'.format(event.user.mention, '|' * self.current[userid]))
 
             self.counters[userid] = self.spawn(counter)
         elif userid in self.counters:
