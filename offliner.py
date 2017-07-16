@@ -46,6 +46,10 @@ class Offliner(Plugin):
             self.counters[userid].kill()
             del self.counters[userid]
 
+            # Do not save zeroes
+            if self.current[userid] == 0:
+                return
+
             # Save maximum and statistics
             try:
                 if self.maximum[userid] < self.current[userid]:
