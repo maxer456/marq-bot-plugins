@@ -1,4 +1,4 @@
-#/usr/bin/env pyton3
+#!/usr/bin/env pyton3
 
 from disco.bot import Plugin
 from disco.types.user import Status
