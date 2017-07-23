@@ -6,6 +6,7 @@ from praw import Reddit
 class RedditNewsConfig(Config):
     site_name = ''
     user_agent = ''
+    history_size = 20
 
 @Plugin.with_config(RedditNewsConfig)
 class RedditNews(Plugin):
@@ -20,6 +21,7 @@ class RedditNews(Plugin):
 
         self.settings = self.storage.guild('redditnews_settings')
         self.searches = self.storage.guild('redditnews_searches')
+        self.history = self.storage.guild('redditnews_history')
         self.reddit = Reddit(self.config.site_name, user_agent=self.config.user_agent)
 
 
@@ -64,3 +66,31 @@ class RedditNews(Plugin):
             msg = 'There is no search for subreddit {}.'.format(subreddit)
 
         event.msg.reply(msg)
+
+    @Plugin.schedule(10, repeat=True, init=False)
+    def redditnews_search(self):
+        for _, guild in self.state.guilds.items():
+            self.ctx['guild'] = guild
+            try:
+                chan = guild.channels[self.settings['channel']]
+                self.redditnews_post(chan)
+            except Exception as e:
+                raise e
+            finally:
+                self.ctx.drop()
+    
+
+    def redditnews_post(self, chan):
+        for sub, search in self.searches.items():
+            subreddit = self.reddit.subreddit(sub)
+            if sub not in self.history:
+                self.history[sub] = []
+
+            for post in subreddit.search(search, sort='new', time_filter='day'):
+                if post.id not in self.history[sub]:
+                    message = chan.send_message(post.title)
+                    self.history[sub] = self.history[sub] + [post.id]
+
+            if len(self.history[sub]) > self.config.history_size:
+                self.history[sub] = self.history[sub][-self.config.history_size:]
+
