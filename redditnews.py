@@ -25,11 +25,23 @@ class RedditNews(Plugin):
     @Plugin.command('redditnews list', aliases=['rdnl', 'rdn list'])
     def redditnews_list(self, event):
         if len(self.searches):
-            msg = 'Currently set up subreddits: '
+            msg = 'Currently set up subreddits:'
         else:
             msg = 'There are currently no set up subreddits.'
 
         for k in self.searches.keys():
-            msg += k
+            msg += ' {}'.format(k)
+
+        event.msg.reply(msg)
+
+    @Plugin.command('redditnews add', '<subreddit:str> <search:str...>', aliases=['rdna','rdn add'])
+    def redditnews_add(self, event, subreddit, search):
+        try:
+            msg = 'Replacing {} search \'{}\' with '.format(subreddit, self.searches[subreddit])
+        except KeyError:
+            msg = 'Adding {} search '.format(subreddit)
+
+        self.searches[subreddit] = search
+        msg += '\'{}\''.format(search)
 
         event.msg.reply(msg)
