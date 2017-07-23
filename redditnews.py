@@ -1,12 +1,15 @@
 #!/usr/bin/env pyton3
 
+from datetime import datetime, timezone
 from disco.bot import Plugin, Config
+from disco.types.message import MessageEmbed
 from praw import Reddit
 
 class RedditNewsConfig(Config):
     site_name = ''
     user_agent = ''
     history_size = 20
+    thumbnails = True
 
 @Plugin.with_config(RedditNewsConfig)
 class RedditNews(Plugin):
@@ -26,13 +29,13 @@ class RedditNews(Plugin):
 
 
     @Plugin.command('redditnews here', aliases=['rdnh', 'rdn here'])
-    def redditnews_channel(self, event):
+    def command_channel(self, event):
         self.settings['channel'] = event.channel.id
         event.channel.send_message('I will now post my Reddit news here.')
 
 
     @Plugin.command('redditnews list', aliases=['rdnl', 'rdn list'])
-    def redditnews_list(self, event):
+    def command_list(self, event):
         if len(self.searches):
             msg = 'Currently set up subreddits:'
         else:
@@ -45,7 +48,7 @@ class RedditNews(Plugin):
 
 
     @Plugin.command('redditnews add', '<subreddit:str> <search:str...>', aliases=['rdna','rdn add'])
-    def redditnews_add(self, event, subreddit, search):
+    def command_add(self, event, subreddit, search):
         try:
             msg = 'Replacing {} search \'{}\' with '.format(subreddit, self.searches[subreddit])
         except KeyError:
@@ -58,7 +61,7 @@ class RedditNews(Plugin):
 
 
     @Plugin.command('redditnews remove', '<subreddit:str>', aliases=['rdnr', 'rdn remove'])
-    def redditnews_remove(self, event, subreddit):
+    def command_remove(self, event, subreddit):
         try:
             del self.searches[subreddit]
             msg = 'Search {} deleted.'.format(subreddit)
@@ -67,20 +70,20 @@ class RedditNews(Plugin):
 
         event.msg.reply(msg)
 
-    @Plugin.schedule(10, repeat=True, init=False)
-    def redditnews_search(self):
+    @Plugin.schedule(1800, repeat=True, init=False)
+    def shedule_search(self):
         for _, guild in self.state.guilds.items():
             self.ctx['guild'] = guild
             try:
                 chan = guild.channels[self.settings['channel']]
-                self.redditnews_post(chan)
+                self.perform_search(chan)
             except Exception as e:
                 raise e
             finally:
                 self.ctx.drop()
-    
 
-    def redditnews_post(self, chan):
+
+    def perform_search(self, chan):
         for sub, search in self.searches.items():
             subreddit = self.reddit.subreddit(sub)
             if sub not in self.history:
@@ -88,9 +91,38 @@ class RedditNews(Plugin):
 
             for post in subreddit.search(search, sort='new', time_filter='day'):
                 if post.id not in self.history[sub]:
-                    message = chan.send_message(post.title)
+                    self.send_post(chan, post)
                     self.history[sub] = self.history[sub] + [post.id]
 
             if len(self.history[sub]) > self.config.history_size:
                 self.history[sub] = self.history[sub][-self.config.history_size:]
 
+
+    def send_post(self, chan, post):
+        embed = MessageEmbed()
+        embed.title, embed.url = post.title, post.url
+
+        if post.link_flair_text:
+            embed.description = '{} [{}] ([comments]({}))'
+        else:
+            embed.description = '{}{}([comments]({}))'
+        embed.description = embed.description.format(
+                post.subreddit.title,
+                post.link_flair_text or ' ',
+                post.shortlink
+                )
+
+        embed.color = 0x4587FF
+        embed.set_author(
+                name=post.author.name,
+                url='{}/u/{}'.format(self.reddit.config.reddit_url, post.author.name)
+                )
+        embed.timestamp = datetime.fromtimestamp(post.created_utc, timezone.utc).isoformat()
+
+        if self.config.thumbnails:
+            try:
+                embed.set_thumbnail(url=post.preview['images'][0]['source']['url'])
+            except:
+                pass
+
+        chan.send_message('', embed=embed)
