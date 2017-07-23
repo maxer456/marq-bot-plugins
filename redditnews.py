@@ -30,12 +30,21 @@ class RedditNews(Plugin):
 
     @Plugin.command('redditnews here', aliases=['rdnh', 'rdn here'])
     def command_channel(self, event):
+        """
+        Set the channel to which this plugin will post. The channel is set
+        to where the command message originated from.
+        """
+
         self.settings['channel'] = event.channel.id
         event.channel.send_message('I will now post my Reddit news here.')
 
 
     @Plugin.command('redditnews list', aliases=['rdnl', 'rdn list'])
     def command_list(self, event):
+        """
+        Print out which subreddits are being periodically searched.
+        """
+
         if len(self.searches):
             msg = 'Currently set up subreddits:'
         else:
@@ -49,6 +58,11 @@ class RedditNews(Plugin):
 
     @Plugin.command('redditnews add', '<subreddit:str> <search:str...>', aliases=['rdna','rdn add'])
     def command_add(self, event, subreddit, search):
+        """
+        Add a new search to the periodically checked subreddits.
+        If the specified subreddit is already being searched, replace the query.
+        """
+
         try:
             msg = 'Replacing {} search \'{}\' with '.format(subreddit, self.searches[subreddit])
         except KeyError:
@@ -62,6 +76,10 @@ class RedditNews(Plugin):
 
     @Plugin.command('redditnews remove', '<subreddit:str>', aliases=['rdnr', 'rdn remove'])
     def command_remove(self, event, subreddit):
+        """
+        Remove the specified subreddit being monitored.
+        """
+
         try:
             del self.searches[subreddit]
             msg = 'Search {} deleted.'.format(subreddit)
@@ -70,8 +88,13 @@ class RedditNews(Plugin):
 
         event.msg.reply(msg)
 
+
     @Plugin.schedule(1800, repeat=True, init=False)
     def shedule_search(self):
+        """
+        Timer for periodic search.
+        """
+
         for _, guild in self.state.guilds.items():
             self.ctx['guild'] = guild
             try:
