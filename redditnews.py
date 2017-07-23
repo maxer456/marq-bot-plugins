@@ -1,7 +1,13 @@
 #!/usr/bin/env pyton3
 
-from disco.bot import Plugin
+from disco.bot import Plugin, Config
+from praw import Reddit
 
+class RedditNewsConfig(Config):
+    site_name = ''
+    user_agent = ''
+
+@Plugin.with_config(RedditNewsConfig)
 class RedditNews(Plugin):
     """
     Plugin which periodically performs a search on the specified subreddits and posts
@@ -14,6 +20,7 @@ class RedditNews(Plugin):
 
         self.settings = self.storage.guild('redditnews_settings')
         self.searches = self.storage.guild('redditnews_searches')
+        self.reddit = Reddit(self.config.site_name, user_agent=self.config.user_agent)
 
 
     @Plugin.command('redditnews here', aliases=['rdnh', 'rdn here'])
