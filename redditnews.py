@@ -34,6 +34,7 @@ class RedditNews(Plugin):
 
         event.msg.reply(msg)
 
+
     @Plugin.command('redditnews add', '<subreddit:str> <search:str...>', aliases=['rdna','rdn add'])
     def redditnews_add(self, event, subreddit, search):
         try:
@@ -43,5 +44,16 @@ class RedditNews(Plugin):
 
         self.searches[subreddit] = search
         msg += '\'{}\''.format(search)
+
+        event.msg.reply(msg)
+
+
+    @Plugin.command('redditnews remove', '<subreddit:str>', aliases=['rdnr', 'rdn remove'])
+    def redditnews_remove(self, event, subreddit):
+        try:
+            del self.searches[subreddit]
+            msg = 'Search {} deleted.'.format(subreddit)
+        except KeyError:
+            msg = 'There is no search for subreddit {}.'.format(subreddit)
 
         event.msg.reply(msg)
